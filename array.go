@@ -60,7 +60,7 @@ func (c *ArrayConstraint) Validate(v interface{}) (err error) {
 		for i := 0; i < l; i++ {
 			iv := rv.Index(i).Interface()
 			kv := fmt.Sprintf("%s", iv)
-pdebug.Printf("unique? -> %s", kv)
+			pdebug.Printf("unique? -> %s", kv)
 			if _, ok := uitems[kv]; ok {
 				return errors.New("duplicate element found")
 			}
@@ -73,10 +73,29 @@ pdebug.Printf("unique? -> %s", kv)
 			pdebug.Printf("Checking if all items match a spec")
 		}
 		// if this is set, then all items must fulfill this.
-		// additional items are ignored
+		// additional items and constraints are ignored
 		for i := 0; i < l; i++ {
 			iv := rv.Index(i).Interface()
 			if err := celem.Validate(iv); err != nil {
+				return err
+			}
+		}
+	} else if relem := c.contains; relem != nil {
+		if pdebug.Enabled {
+			pdebug.Printf("Checking if all constrains can be found in items")
+		}
+
+		// each constraint needs to match at least 1 item in the array
+		// it's perfectly fine for multiple constrains to match the same item
+		for _, ric := range relem {
+			var err error
+			for i := 0; i < l; i++ {
+				iv := rv.Index(i).Interface()
+				if err = ric.Validate(iv); err == nil {
+					break
+				}
+			}
+			if err != nil {
 				return err
 			}
 		}
@@ -124,6 +143,13 @@ pdebug.Printf("unique? -> %s", kv)
 // to this method. If unspecified, no extra items are allowed.
 func (c *ArrayConstraint) AdditionalItems(ac Constraint) *ArrayConstraint {
 	c.additionalItems = ac
+	return c
+}
+
+// ContainsItems specifies the constraint that the array constains
+// at least 1 item of the given constraints
+func (c *ArrayConstraint) ContainsItems(ic []Constraint) *ArrayConstraint {
+	c.contains = ic
 	return c
 }
 

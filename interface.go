@@ -98,6 +98,7 @@ type ArrayConstraint struct {
 	defaultValue
 	items           Constraint
 	positionalItems []Constraint
+	contains        []Constraint
 	additionalItems Constraint
 	minItems        int
 	maxItems        int
